@@ -10,6 +10,7 @@ using BayatGames.SaveGameFree.Serializers;
 using RedRunner.Characters;
 using RedRunner.Collectables;
 using RedRunner.TerrainGeneration;
+using RedRunner.Utilities;
 
 namespace RedRunner
 {
@@ -40,15 +41,22 @@ namespace RedRunner
 			}
 		}
 
-		[SerializeField]
 		private Character m_MainCharacter;
 		[SerializeField]
 		[TextArea ( 3, 30 )]
 		private string m_ShareText;
+        [SerializeField]
+        private Character[] m_Characters;
 		[SerializeField]
 		private string m_ShareUrl;
 		[SerializeField]
 		private LoadEvent m_OnLoaded;
+
+        [SerializeField]
+        private CameraController m_CameraController;
+        [SerializeField]
+        private TerrainGenerator m_TerrainGenerator;
+
 		private float m_StartScoreX = 0f;
 		private float m_HighScore = 0f;
 		private float m_LastScore = 0f;
@@ -139,8 +147,8 @@ namespace RedRunner
 			{
 				OnCoinChanged ( m_Coin );
 			}
-			m_MainCharacter.OnDead += MainCharacter_OnDead;
-			m_StartScoreX = m_MainCharacter.transform.position.x;
+
+            Array.ForEach(m_Characters, character => character.OnDead += MainCharacter_OnDead);
 		}
 
 		void MainCharacter_OnDead ()
@@ -222,9 +230,16 @@ namespace RedRunner
 			}
 		}
 
-		public void StartGame ()
+		public void StartGame (Character toPlay)
 		{
-			m_GameStarted = true;
+            Array.ForEach(m_Characters, character => character.gameObject.SetActive(false));
+            m_MainCharacter = toPlay;
+            m_MainCharacter.gameObject.SetActive(true);
+            m_CameraController.m_Followee = m_MainCharacter.transform;
+            m_TerrainGenerator.m_Character = m_MainCharacter;
+            m_StartScoreX = m_MainCharacter.transform.position.x;
+
+            m_GameStarted = true;
 			ResumeGame ();
 		}
 

@@ -22,10 +22,11 @@ namespace RedRunner.Utilities
 			}
 		}
 
-		[SerializeField]
+        public Transform m_Followee;
+
+
+        [SerializeField]
 		private Camera m_Camera;
-		[SerializeField]
-		private Transform m_Followee;
 		[SerializeField]
 		private float m_MinY = 0f;
 		[SerializeField]
