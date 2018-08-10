@@ -62,12 +62,13 @@ namespace RedRunner
 		protected AudioClip m_MaceSlamSound;
 		[SerializeField]
 		protected AudioClip m_ButtonClickSound;
+        [SerializeField]
+        protected AudioClip[] m_ExplosionSounds;
+        #endregion
 
-		#endregion
+        #region MonoBehaviour Messages
 
-		#region MonoBehaviour Messages
-
-		void Awake ()
+        void Awake ()
 		{
 			m_Singleton = this;
 			PlayMusic ();
@@ -108,6 +109,11 @@ namespace RedRunner
 		{
 			PlaySoundOn (m_DieAudioSource, m_WaterSplashSound);
 		}
+
+        public void PlayExplosionSound(Vector3 position)
+        {
+            PlaySoundOn(m_DieAudioSource, GetRandomClip( m_ExplosionSounds ));
+        }
 
 		public void PlayMaceSlamSound (Vector3 position)
 		{

@@ -12,6 +12,8 @@ namespace RedRunner.Enemies
 
 		[SerializeField]
 		private Collider2D m_Collider2D;
+        [SerializeField]
+        private ParticleSystem m_explosionParticlePrefab;
 
 		public override Collider2D Collider2D {
 			get {
@@ -31,10 +33,11 @@ namespace RedRunner.Enemies
 		{
 			target.Die (true);
 
-			// TODO: explosion SFX and particles
-            //ParticleSystem particle = Instantiate<ParticleSystem> (target.WaterParticleSystem, spawnPosition, Quaternion.identity);
-			//Destroy (particle.gameObject, particle.main.duration);
-			//AudioManager.Singleton.PlayWaterSplashSound (transform.position);
+            ParticleSystem particle = Instantiate<ParticleSystem> (m_explosionParticlePrefab, this.transform.position, Quaternion.identity);
+            particle.Play();
+			Destroy (particle.gameObject, particle.main.duration);
+            Destroy(this.gameObject);
+			AudioManager.Singleton.PlayExplosionSound (transform.position);
 		}
 
 	}
