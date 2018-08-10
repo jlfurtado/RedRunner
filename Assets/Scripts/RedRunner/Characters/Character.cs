@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using RedRunner.Utilities;
+using UnityEngine.Events;
+using System;
+using UnityStandardAssets.CrossPlatformInput;
 
 namespace RedRunner.Characters
 {
@@ -13,58 +16,411 @@ namespace RedRunner.Characters
 	[RequireComponent ( typeof ( Skeleton ) )]
 	public abstract class Character : MonoBehaviour
 	{
+        public delegate void DeadHandler();
 
-		public delegate void DeadHandler ();
+        public virtual event DeadHandler OnDead;
 
-		public virtual event DeadHandler OnDead;
+        #region Fields
 
-		public abstract float MaxRunSpeed { get; }
+        [Header("Character Details")]
+        [Space]
+        [SerializeField]
+        protected float m_MaxRunSpeed = 8f;
+        [SerializeField]
+        protected float m_RunSmoothTime = 5f;
+        [SerializeField]
+        protected float m_RunSpeed = 5f;
+        [SerializeField]
+        protected float m_WalkSpeed = 1.75f;
+        [SerializeField]
+        protected float m_JumpStrength = 10f;
+        [SerializeField]
+        protected Color m_Color = Color.white;
+        [SerializeField]
+        protected string[] m_Actions = new string[0];
+        [SerializeField]
+        protected int m_CurrentActionIndex = 0;
 
-		public abstract float RunSmoothTime { get; }
+        [Header("Character Reference")]
+        [Space]
+        [SerializeField]
+        protected Rigidbody2D m_Rigidbody2D;
+        [SerializeField]
+        protected Collider2D m_Collider2D;
+        [SerializeField]
+        protected Animator m_Animator;
+        [SerializeField]
+        protected GroundCheck m_GroundCheck;
+        [SerializeField]
+        protected ParticleSystem m_RunParticleSystem;
+        [SerializeField]
+        protected ParticleSystem m_JumpParticleSystem;
+        [SerializeField]
+        protected ParticleSystem m_WaterParticleSystem;
+        [SerializeField]
+        protected ParticleSystem m_BloodParticleSystem;
+        [SerializeField]
+        protected Skeleton m_Skeleton;
+        [SerializeField]
+        protected float m_RollForce = 10f;
 
-		public abstract float RunSpeed { get; }
+        [Header("Character Audio")]
+        [Space]
+        [SerializeField]
+        protected AudioSource m_MainAudioSource;
+        [SerializeField]
+        protected AudioSource m_FootstepAudioSource;
+        [SerializeField]
+        protected AudioSource m_JumpAndGroundedAudioSource;
 
-		public abstract float WalkSpeed { get; }
+        [Header("Character Events")]
+        [Space]
+        [SerializeField]
+        protected CharacterDeadEvent m_OnCharacterDead;
 
-		public abstract float JumpStrength { get; }
+        #endregion
 
-		public abstract Vector2 Speed { get; }
+        #region Protected Variables
 
-		public abstract string[] Actions { get; }
+        protected bool m_IsDead = false;
+        protected bool m_ClosingEye = false;
+        protected bool m_Guard = false;
+        protected bool m_Block = false;
+        protected Vector2 m_Speed = Vector2.zero;
+        protected float m_CurrentRunSpeed = 0f;
+        protected float m_CurrentSmoothVelocity = 0f;
+        protected int m_CurrentFootstepSoundIndex = 0;
+        protected Vector3 m_InitialScale;
+        protected Vector3 m_InitialPosition;
 
-		public abstract string CurrentAction { get; }
+        #endregion
 
-		public abstract int CurrentActionIndex { get; }
+        #region MonoBehaviour Messages
 
-		public abstract GroundCheck GroundCheck { get; }
+        protected virtual void Awake()
+        {
+            m_InitialPosition = transform.position;
+            m_InitialScale = transform.localScale;
+            m_GroundCheck.OnGrounded += GroundCheck_OnGrounded;
+            m_Skeleton.OnActiveChanged += Skeleton_OnActiveChanged;
+            m_IsDead = false;
+            m_ClosingEye = false;
+            m_Guard = false;
+            m_Block = false;
+            m_CurrentFootstepSoundIndex = 0;
+            GameManager.OnReset += GameManager_OnReset;
+            Array.ForEach(gameObject.GetComponentsInChildren<SpriteRenderer>(), sprite => sprite.color = m_Color);
+        }
 
-		public abstract Rigidbody2D Rigidbody2D { get; }
+        protected virtual void Update()
+        {
+            if (!GameManager.Singleton.gameStarted || !GameManager.Singleton.gameRunning)
+            {
+                return;
+            }
 
-		public abstract Collider2D Collider2D { get; }
+            if (transform.position.y < 0f)
+            {
+                Die();
+            }
 
-		public abstract Animator Animator { get; }
+            // Speed
+            m_Speed = new Vector2(Mathf.Abs(m_Rigidbody2D.velocity.x), Mathf.Abs(m_Rigidbody2D.velocity.y));
 
-		public abstract ParticleSystem RunParticleSystem { get; }
+            // Speed Calculations
+            m_CurrentRunSpeed = m_RunSpeed;
+            if (m_Speed.x >= m_RunSpeed)
+            {
+                m_CurrentRunSpeed = Mathf.SmoothDamp(m_Speed.x, m_MaxRunSpeed, ref m_CurrentSmoothVelocity, m_RunSmoothTime);
+            }
 
-		public abstract ParticleSystem JumpParticleSystem { get; }
+            // Input Processing
+            Move(CrossPlatformInputManager.GetAxis("Horizontal"));
+            if (CrossPlatformInputManager.GetButtonDown("Jump"))
+            {
+                Jump();
+            }
+            if (m_IsDead && !m_ClosingEye)
+            {
+                StartCoroutine(CloseEye());
+            }
+            if (CrossPlatformInputManager.GetButtonDown("Guard"))
+            {
+                m_Guard = !m_Guard;
+            }
+            if (m_Guard)
+            {
+                if (CrossPlatformInputManager.GetButtonDown("Fire"))
+                {
+                    m_Animator.SetTrigger(m_Actions[m_CurrentActionIndex]);
+                    if (m_CurrentActionIndex < m_Actions.Length - 1)
+                    {
+                        m_CurrentActionIndex++;
+                    }
+                    else
+                    {
+                        m_CurrentActionIndex = 0;
+                    }
+                }
+            }
 
-		public abstract ParticleSystem WaterParticleSystem { get; }
+            if (Input.GetButtonDown("Roll"))
+            {
+                Vector2 force = new Vector2(0f, 0f);
+                if (transform.localScale.z > 0f)
+                {
+                    force.x = m_RollForce;
+                }
+                else if (transform.localScale.z < 0f)
+                {
+                    force.x = -m_RollForce;
+                }
+                m_Rigidbody2D.AddForce(force);
+            }
+        }
 
-		public abstract ParticleSystem BloodParticleSystem { get; }
+        protected virtual void LateUpdate()
+        {
+            m_Animator.SetFloat("Speed", m_Speed.x);
+            m_Animator.SetFloat("VelocityX", Mathf.Abs(m_Rigidbody2D.velocity.x));
+            m_Animator.SetFloat("VelocityY", m_Rigidbody2D.velocity.y);
+            m_Animator.SetBool("IsGrounded", m_GroundCheck.IsGrounded);
+            m_Animator.SetBool("IsDead", m_IsDead);
+            m_Animator.SetBool("Block", m_Block);
+            m_Animator.SetBool("Guard", m_Guard);
+            if (Input.GetButtonDown("Roll"))
+            {
+                m_Animator.SetTrigger("Roll");
+            }
+        }
 
-		public abstract Skeleton Skeleton { get; }
+        #endregion
 
-		public abstract bool IsDead { get; }
+        #region Private Methods
 
-		public abstract bool ClosingEye { get; }
+        private IEnumerator CloseEye()
+        {
+            m_ClosingEye = true;
+            yield return new WaitForSeconds(0.6f);
+            while (m_Skeleton.RightEye.localScale.y > 0f)
+            {
+                if (m_Skeleton.RightEye.localScale.y > 0f)
+                {
+                    Vector3 scale = m_Skeleton.RightEye.localScale;
+                    scale.y -= 0.1f;
+                    m_Skeleton.RightEye.localScale = scale;
+                }
+                if (m_Skeleton.LeftEye.localScale.y > 0f)
+                {
+                    Vector3 scale = m_Skeleton.LeftEye.localScale;
+                    scale.y -= 0.1f;
+                    m_Skeleton.LeftEye.localScale = scale;
+                }
+                yield return new WaitForSeconds(0.05f);
+            }
+        }
 
-		public abstract bool Guard { get; }
+        #endregion
 
-		public abstract bool Block { get; }
+        #region Properties
 
-		public abstract AudioSource Audio { get; }
+        public virtual float MaxRunSpeed
+        {
+            get
+            {
+                return m_MaxRunSpeed;
+            }
+        }
 
-		public abstract void Move ( float horizontalAxis );
+        public virtual float RunSmoothTime
+        {
+            get
+            {
+                return m_RunSmoothTime;
+            }
+        }
+
+        public virtual float RunSpeed
+        {
+            get
+            {
+                return m_RunSpeed;
+            }
+        }
+
+        public virtual float WalkSpeed
+        {
+            get
+            {
+                return m_WalkSpeed;
+            }
+        }
+
+        public virtual float JumpStrength
+        {
+            get
+            {
+                return m_JumpStrength;
+            }
+        }
+
+        public virtual Vector2 Speed
+        {
+            get
+            {
+                return m_Speed;
+            }
+        }
+
+        public virtual Color Color
+        {
+            get
+            {
+                return m_Color;
+            }
+        }
+
+        public virtual string[] Actions
+        {
+            get
+            {
+                return m_Actions;
+            }
+        }
+
+        public virtual string CurrentAction
+        {
+            get
+            {
+                return m_Actions[m_CurrentActionIndex];
+            }
+        }
+
+        public virtual int CurrentActionIndex
+        {
+            get
+            {
+                return m_CurrentActionIndex;
+            }
+        }
+
+        public virtual GroundCheck GroundCheck
+        {
+            get
+            {
+                return m_GroundCheck;
+            }
+        }
+
+        public virtual Rigidbody2D Rigidbody2D
+        {
+            get
+            {
+                return m_Rigidbody2D;
+            }
+        }
+
+        public virtual Collider2D Collider2D
+        {
+            get
+            {
+                return m_Collider2D;
+            }
+        }
+
+        public virtual Animator Animator
+        {
+            get
+            {
+                return m_Animator;
+            }
+        }
+
+        public virtual ParticleSystem RunParticleSystem
+        {
+            get
+            {
+                return m_RunParticleSystem;
+            }
+        }
+
+        public virtual ParticleSystem JumpParticleSystem
+        {
+            get
+            {
+                return m_JumpParticleSystem;
+            }
+        }
+
+        public virtual ParticleSystem WaterParticleSystem
+        {
+            get
+            {
+                return m_WaterParticleSystem;
+            }
+        }
+
+        public virtual ParticleSystem BloodParticleSystem
+        {
+            get
+            {
+                return m_BloodParticleSystem;
+            }
+        }
+
+        public virtual Skeleton Skeleton
+        {
+            get
+            {
+                return m_Skeleton;
+            }
+        }
+
+        public virtual bool IsDead
+        {
+            get
+            {
+                return m_IsDead;
+            }
+        }
+
+        public virtual bool ClosingEye
+        {
+            get
+            {
+                return m_ClosingEye;
+            }
+        }
+
+        public virtual bool Guard
+        {
+            get
+            {
+                return m_Guard;
+            }
+        }
+
+        public virtual bool Block
+        {
+            get
+            {
+                return m_Block;
+            }
+        }
+
+        public virtual AudioSource Audio
+        {
+            get
+            {
+                return m_MainAudioSource;
+            }
+        }
+
+        #endregion
+
+        #region Abstract Methods
+
+        public abstract void Move ( float horizontalAxis );
 
 		public abstract void Jump ();
 
@@ -76,6 +432,40 @@ namespace RedRunner.Characters
 
 		public abstract void Reset ();
 
-	}
+        #endregion
+
+        #region Events
+
+        protected virtual void GameManager_OnReset()
+        {
+            transform.position = m_InitialPosition;
+            Reset();
+        }
+
+        protected virtual void Skeleton_OnActiveChanged(bool active)
+        {
+            m_Animator.enabled = !active;
+            m_Collider2D.enabled = !active;
+            m_Rigidbody2D.simulated = !active;
+        }
+
+        protected virtual void GroundCheck_OnGrounded()
+        {
+            if (!m_IsDead)
+            {
+                m_JumpParticleSystem.Play();
+                AudioManager.Singleton.PlayGroundedSound(m_JumpAndGroundedAudioSource);
+            }
+        }
+
+        #endregion
+
+        [System.Serializable]
+        public class CharacterDeadEvent : UnityEvent
+        {
+
+        }
+
+    }
 
 }
