@@ -93,6 +93,7 @@ namespace RedRunner.Characters
 						                          Quaternion.identity );
                     var main = particle.main;
                     main.startColor = m_Color;
+                    particle.GetComponent<Rigidbody2D>().velocity = m_Rigidbody2D.velocity * 0.5f;
                     Destroy ( particle.gameObject, particle.main.duration );
 				}
 				m_OnCharacterDead.Invoke ();

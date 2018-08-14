@@ -76,7 +76,7 @@ namespace RedRunner
 		public void SetActive (bool active, Vector2 velocity)
 		{
 			if (m_IsActive != active) {
-				if (!active) {
+				if (active) {
 					m_Body.velocity = velocity;
 				}
 				m_IsActive = active;
