@@ -65,9 +65,7 @@ namespace RedRunner.Utilities
 
 		void Update ()
 		{
-//			if (!m_ShakeControl.IsShaking) {
-			Follow ();
-//			}
+    		Follow ();
 			if ( transform.position != m_OldPosition )
 			{
 				if ( onCameraTranslate != null )
@@ -104,7 +102,7 @@ namespace RedRunner.Utilities
 			{
 				cameraPosition.y = m_MinY + m_Camera.orthographicSize;
 			}
-			transform.position = Vector3.MoveTowards ( transform.position, cameraPosition, speed );
+			transform.position = Vector3.MoveTowards ( transform.position, cameraPosition, speed) + m_ShakeControl.ShakeOffset;
 			if ( transform.position == targetPosition && m_FastMove )
 			{
 				m_FastMove = false;

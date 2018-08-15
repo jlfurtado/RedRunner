@@ -36,6 +36,7 @@ namespace RedRunner.Enemies
             Vector2 direction = (target.transform.position - (transform.position - Vector3.up * FLOWER_HEIGHT)).normalized;
             target.GetComponent<Rigidbody2D>().AddForce(direction * m_explosionMagnitude, ForceMode2D.Impulse);
             target.Die (true);
+            Camera.main.GetComponent<CameraControl>().Shake(1.5f, 5, 50);
 
             ParticleSystem particle = Instantiate<ParticleSystem> (m_explosionParticlePrefab, this.transform.position, Quaternion.identity);
             particle.Play();

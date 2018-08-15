@@ -81,9 +81,10 @@ namespace RedRunner.Enemies
 			AudioManager.Singleton.PlayMaceSlamSound (transform.position);
 			ParticleSystem particle = Instantiate<ParticleSystem> (m_ParticleSystem, position, m_ParticleSystem.transform.rotation);
 			Destroy (particle.gameObject, particle.main.duration);
-		}
+            Camera.main.GetComponent<CameraControl>().Shake(1, 5, 50);
+        }
 
-		public override void Kill (Character target)
+        public override void Kill (Character target)
 		{
 			m_PathFollower.Stopped = true;
 			target.Die (true);
