@@ -43,7 +43,19 @@ namespace RedRunner.Collectables
 
 		protected Character m_CurrentCharacter;
 
-		public override Animator Animator {
+        private CoinRigidbody2D[] coins;
+
+        public void Start()
+        {
+            coins = new CoinRigidbody2D[Random.Range(m_MinimumCoins, m_MaximumCoins)];
+            for (int i = 0; i < coins.Length; i++)
+            {
+                coins[i] = Instantiate<CoinRigidbody2D>(m_CoinRigidbody2D, m_SpawnPoint.position, Quaternion.identity, transform);
+                coins[i].gameObject.SetActive(false);
+            }
+        }
+
+        public override Animator Animator {
 			get {
 				return m_Animator;
 			}
@@ -163,10 +175,10 @@ namespace RedRunner.Collectables
 		{
 			AudioManager.Singleton.PlayChestSound (transform.position);
 			m_ParticleSystem.Play ();
-			int coinsCount = Random.Range (m_MinimumCoins, m_MaximumCoins);
-			for (int i = 0; i < coinsCount; i++) {
-				CoinRigidbody2D coin = Instantiate<CoinRigidbody2D> (m_CoinRigidbody2D, m_SpawnPoint.position, Quaternion.identity, transform);
-				float x = Random.Range (m_RandomForceXMinimum, m_RandomForceXMaximum);
+			for (int i = 0; i < coins.Length; i++) {
+                CoinRigidbody2D coin = coins[i];
+                coin.gameObject.SetActive(true);
+                float x = Random.Range (m_RandomForceXMinimum, m_RandomForceXMaximum);
 				float y = Random.Range (m_RandomForceYMinimum, m_RandomForceYMaximum);
 				Vector2 force = new Vector2 (x, y);
 				coin.Rigidbody2D.AddForce (force, ForceMode2D.Impulse);
