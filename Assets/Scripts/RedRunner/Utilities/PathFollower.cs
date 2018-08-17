@@ -83,7 +83,7 @@ namespace RedRunner.Utilities
 		void Update ()
 		{
 			if (m_Smart) {
-				Collider2D[] colliders = Physics2D.OverlapBoxAll (transform.position + m_RangeOffset, m_RangeSize, 0f, LayerMask.GetMask ("Characters"));
+				Collider2D[] colliders = Physics2D.OverlapBoxAll (transform.position + m_RangeOffset, m_RangeSize, 0f, LayerMask.GetMask ("Red Runner")|LayerMask.GetMask("Blue Runner"));
 				for (int i = 0; i < colliders.Length; i++) {
 					Character character = colliders [i].GetComponent<Character> ();
 					if (character != null) {
