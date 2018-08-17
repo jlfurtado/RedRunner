@@ -10,6 +10,7 @@ namespace RedRunner
         #region Private Variables
 
         private List<Vector3[]> m_startPositions;
+        private Transform[] m_childTransforms;
 
         #endregion
         
@@ -18,7 +19,8 @@ namespace RedRunner
         private void Start()
         {
             m_startPositions = new List<Vector3[]>();
-            foreach (Transform t in GetComponentsInChildren<Transform>())
+            m_childTransforms = GetComponentsInChildren<Transform>();
+            foreach (Transform t in m_childTransforms)
             {
                 m_startPositions.Add(CacheTransformData(t));
             }
@@ -118,10 +120,9 @@ namespace RedRunner
 
         public void Reset()
         {
-            Transform[] current = GetComponentsInChildren<Transform>();
-            for (int k = 0; k < current.Length; k++)
+            for (int k = 0; k < m_childTransforms.Length; k++)
             {
-                ApplyCachedTransformData(current[k], m_startPositions[k]);
+                ApplyCachedTransformData(m_childTransforms[k], m_startPositions[k]);
             }
         }
 
