@@ -7,10 +7,33 @@ namespace RedRunner
 
 	public class Skeleton : MonoBehaviour
 	{
+        #region Private Variables
 
-		#region Delegates
+        private List<Vector3[]> m_startPositions;
 
-		public delegate void ActiveChangedHandler (bool active);
+        #endregion
+        
+        #region UnityMessages
+
+        private void Start()
+        {
+            m_startPositions = new List<Vector3[]>();
+            foreach (Transform t in GetComponentsInChildren<Transform>())
+            {
+                m_startPositions.Add(CacheTransformData(t));
+            }
+        }
+
+        private Vector3[] CacheTransformData(Transform p_transform)
+        {
+            return new Vector3[] { p_transform.position, p_transform.rotation.eulerAngles, p_transform.localScale };
+        }
+
+        #endregion
+
+        #region Delegates
+
+        public delegate void ActiveChangedHandler (bool active);
 
 		#endregion
 
@@ -93,8 +116,24 @@ namespace RedRunner
 			}
 		}
 
-		#endregion
+        public void Reset()
+        {
+            Transform[] current = GetComponentsInChildren<Transform>();
+            for (int k = 0; k < current.Length; k++)
+            {
+                ApplyCachedTransformData(current[k], m_startPositions[k]);
+            }
+        }
 
-	}
+        private void ApplyCachedTransformData(Transform p_transform, Vector3[] data)
+        {
+            p_transform.position = data[0];
+            p_transform.rotation = Quaternion.Euler(data[1]);
+            p_transform.localScale = data[2];
+        }
+
+        #endregion
+
+    }
 
 }

@@ -119,6 +119,7 @@ namespace RedRunner.Characters
 			transform.localScale = m_InitialScale;
 			m_Rigidbody2D.velocity = Vector2.zero;
 			m_Skeleton.SetActive ( false, m_Rigidbody2D.velocity );
+            m_Skeleton.Reset();
 		}
 
 		#endregion
