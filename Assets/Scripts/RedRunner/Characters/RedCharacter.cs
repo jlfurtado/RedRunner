@@ -30,7 +30,7 @@ namespace RedRunner.Characters
 		{
 			if ( !m_IsDead )
 			{
-				float speed = m_CurrentRunSpeed;
+				float speed = m_CurrentRunSpeed * (m_GroundCheck.IsSnow ? m_snowSpeed : 1.0f);
 //				if ( CrossPlatformInputManager.GetButton ( "Walk" ) )
 //				{
 //					speed = m_WalkSpeed;

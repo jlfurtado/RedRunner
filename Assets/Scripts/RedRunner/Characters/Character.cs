@@ -35,6 +35,8 @@ namespace RedRunner.Characters
         [SerializeField]
         protected float m_JumpStrength = 10f;
         [SerializeField]
+        protected float m_snowSpeed = 0.5f;
+        [SerializeField]
         protected Color m_Color = Color.white;
         [SerializeField]
         protected string[] m_Actions = new string[0];
