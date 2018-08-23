@@ -6,6 +6,7 @@ using RedRunner.Utilities;
 using UnityEngine.Events;
 using System;
 using UnityStandardAssets.CrossPlatformInput;
+using RedRunner.Enemies;
 
 namespace RedRunner.Characters
 {
@@ -80,6 +81,9 @@ namespace RedRunner.Characters
         [SerializeField]
         protected CharacterDeadEvent m_OnCharacterDead;
 
+        [SerializeField]
+        protected float m_freezeTime = 30.0f;
+
         #endregion
 
         #region Protected Variables
@@ -94,6 +98,34 @@ namespace RedRunner.Characters
         protected int m_CurrentFootstepSoundIndex = 0;
         protected Vector3 m_InitialScale;
         protected Vector3 m_InitialPosition;
+        protected float m_timeLeft;
+        protected List<Freezer> m_freezers = new List<Freezer>();
+        protected List<Fire> m_fires = new List<Fire>();
+
+        #endregion
+
+
+        #region Public Methods
+
+        public void EnterFreezer(Freezer freezer)
+        {
+            m_freezers.Add(freezer);
+        }
+
+        public void ExitFreezer(Freezer freezer)
+        {
+            m_freezers.Remove(freezer);
+        }
+
+        public void EnterFire(Fire fire)
+        {
+            m_fires.Add(fire);
+        }
+
+        public void ExitFire(Fire fire)
+        {
+            m_fires.Remove(fire);
+        }
 
         #endregion
 
@@ -112,6 +144,7 @@ namespace RedRunner.Characters
             m_CurrentFootstepSoundIndex = 0;
             GameManager.OnReset += GameManager_OnReset;
             Array.ForEach(gameObject.GetComponentsInChildren<SpriteRenderer>(), sprite => sprite.color = m_Color);
+            m_timeLeft = m_freezeTime;
         }
 
         protected virtual void Update()
@@ -125,6 +158,8 @@ namespace RedRunner.Characters
             {
                 Die();
             }
+
+            UpdateFreezeStatus();
 
             // Speed
             m_Speed = new Vector2(Mathf.Abs(m_Rigidbody2D.velocity.x), Mathf.Abs(m_Rigidbody2D.velocity.y));
@@ -220,6 +255,16 @@ namespace RedRunner.Characters
                 }
                 yield return new WaitForSeconds(0.05f);
             }
+        }
+
+        protected virtual void UpdateFreezeStatus()
+        {
+            m_timeLeft = Mathf.Clamp(m_timeLeft + ((IsFreezing ? -1.0f : 1.0f)*Time.deltaTime), 0.0f, m_freezeTime);
+            if (m_timeLeft <= 0.0f)
+            {
+                m_freezers[m_freezers.Count - 1].Kill(this);
+            }
+            Debug.Log(m_timeLeft);
         }
 
         #endregion
@@ -418,6 +463,22 @@ namespace RedRunner.Characters
             }
         }
 
+        public bool IsFreezing
+        {
+            get
+            {
+                return m_freezers.Count > 0 && m_fires.Count <= 0;
+            }
+        }
+
+        public float PercentFrozen
+        {
+            get
+            {
+                return 1.0f - (m_timeLeft / m_freezeTime);
+            }
+
+        }
         #endregion
 
         #region Abstract Methods

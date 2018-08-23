@@ -120,10 +120,11 @@ namespace RedRunner.Characters
 			m_Rigidbody2D.velocity = Vector2.zero;
 			m_Skeleton.SetActive ( false, m_Rigidbody2D.velocity );
             m_Skeleton.Reset();
-		}
+            m_timeLeft = m_freezeTime;
+        }
 
-		#endregion
+        #endregion
 
-	}
+    }
 
 }
