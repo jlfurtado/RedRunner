@@ -63,6 +63,9 @@ namespace RedRunner.Characters
         [SerializeField]
         protected ParticleSystem m_BloodParticleSystem;
         [SerializeField]
+        protected ParticleSystem m_snowParticles;
+
+        [SerializeField]
         protected Skeleton m_Skeleton;
         [SerializeField]
         protected float m_RollForce = 10f;
@@ -83,6 +86,18 @@ namespace RedRunner.Characters
 
         [SerializeField]
         protected float m_freezeTime = 30.0f;
+
+        [SerializeField]
+        protected float m_maxSnowEmission = 200.0f;
+
+        [SerializeField]
+        protected float m_minSnowEmission = 25.0f;
+
+        [SerializeField]
+        protected float m_minSnowStartSpeed = -5.0f;
+
+        [SerializeField]
+        protected float m_maxSnowStartSpeed = -20.0f;
 
         #endregion
 
@@ -160,6 +175,7 @@ namespace RedRunner.Characters
             }
 
             UpdateFreezeStatus();
+            UpdateSnowParticles();
 
             // Speed
             m_Speed = new Vector2(Mathf.Abs(m_Rigidbody2D.velocity.x), Mathf.Abs(m_Rigidbody2D.velocity.y));
@@ -265,6 +281,23 @@ namespace RedRunner.Characters
                 m_freezers[m_freezers.Count - 1].Kill(this);
             }
             Debug.Log(m_timeLeft);
+        }
+
+        private void UpdateSnowParticles()
+        {
+            var emission = m_snowParticles.emission;
+            var main = m_snowParticles.main;
+
+            if (IsInSnow)
+            {
+                emission.rateOverTime = Mathf.Lerp(m_minSnowEmission, m_maxSnowEmission, PercentFrozen);
+                main.startSpeed = Mathf.Lerp(m_minSnowStartSpeed, m_maxSnowStartSpeed, PercentFrozen);
+            }
+            else
+            {
+                emission.rateOverTime = 0.0f;
+                main.startSpeed = m_minSnowStartSpeed;
+            }
         }
 
         #endregion
@@ -468,6 +501,14 @@ namespace RedRunner.Characters
             get
             {
                 return m_freezers.Count > 0 && m_fires.Count <= 0;
+            }
+        }
+
+        public bool IsInSnow
+        {
+            get
+            {
+                return m_freezers.Count > 0;
             }
         }
 
