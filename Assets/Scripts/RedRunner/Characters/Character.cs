@@ -84,6 +84,7 @@ namespace RedRunner.Characters
         [SerializeField]
         protected CharacterDeadEvent m_OnCharacterDead;
 
+        [Header("Charater Snow Info")]
         [SerializeField]
         protected float m_freezeTime = 30.0f;
 
@@ -98,6 +99,9 @@ namespace RedRunner.Characters
 
         [SerializeField]
         protected float m_maxSnowStartSpeed = -20.0f;
+
+        [SerializeField]
+        protected WhiteOut m_whiteOut;
 
         #endregion
 
@@ -176,6 +180,7 @@ namespace RedRunner.Characters
 
             UpdateFreezeStatus();
             UpdateSnowParticles();
+            m_whiteOut.PerformWhiteOut(this);
 
             // Speed
             m_Speed = new Vector2(Mathf.Abs(m_Rigidbody2D.velocity.x), Mathf.Abs(m_Rigidbody2D.velocity.y));
