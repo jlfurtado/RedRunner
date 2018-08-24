@@ -85,7 +85,7 @@ namespace RedRunner.Characters
 				}
 				m_IsDead = true;
 				m_Skeleton.SetActive ( true, m_Rigidbody2D.velocity );
-				if ( blood )
+                if ( blood )
 				{
 					ParticleSystem particle = Instantiate<ParticleSystem> ( 
 						                          m_BloodParticleSystem,
@@ -121,6 +121,8 @@ namespace RedRunner.Characters
 			m_Skeleton.SetActive ( false, m_Rigidbody2D.velocity );
             m_Skeleton.Reset();
             m_timeLeft = m_freezeTime;
+            m_freezers.Clear();
+            m_fires.Clear();
         }
 
         #endregion
