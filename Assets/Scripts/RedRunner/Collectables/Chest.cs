@@ -50,7 +50,7 @@ namespace RedRunner.Collectables
             coins = new CoinRigidbody2D[Random.Range(m_MinimumCoins, m_MaximumCoins)];
             for (int i = 0; i < coins.Length; i++)
             {
-                coins[i] = Instantiate<CoinRigidbody2D>(m_CoinRigidbody2D, m_SpawnPoint.position, Quaternion.identity, transform);
+                coins[i] = Instantiate(m_CoinRigidbody2D, m_SpawnPoint.position, Quaternion.identity, transform);
                 coins[i].gameObject.SetActive(false);
             }
         }

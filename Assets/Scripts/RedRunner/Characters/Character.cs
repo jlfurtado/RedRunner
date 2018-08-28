@@ -101,6 +101,12 @@ namespace RedRunner.Characters
         protected float m_maxSnowStartSpeed = -20.0f;
 
         [SerializeField]
+        protected float m_freezeRate = 1.0f;
+
+        [SerializeField]
+        protected float m_warmRate = 3.0f;
+
+        [SerializeField]
         protected WhiteOut m_whiteOut;
 
         #endregion
@@ -280,7 +286,7 @@ namespace RedRunner.Characters
 
         protected virtual void UpdateFreezeStatus()
         {
-            m_timeLeft = Mathf.Clamp(m_timeLeft + ((IsFreezing ? -1.0f : 1.0f)*Time.deltaTime), 0.0f, m_freezeTime);
+            m_timeLeft = Mathf.Clamp(m_timeLeft + ((IsFreezing ? -m_freezeRate : m_warmRate)*Time.deltaTime), 0.0f, m_freezeTime);
             if (m_timeLeft <= 0.0f)
             {
                 m_freezers[m_freezers.Count - 1].Kill(this);
