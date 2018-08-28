@@ -285,7 +285,6 @@ namespace RedRunner.Characters
             {
                 m_freezers[m_freezers.Count - 1].Kill(this);
             }
-            Debug.Log(m_timeLeft);
         }
 
         private void UpdateSnowParticles()
